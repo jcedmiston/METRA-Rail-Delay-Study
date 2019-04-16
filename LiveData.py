@@ -122,8 +122,12 @@ def CollectData():
                             log.info("Trip Data: " + logData)
                         
                         try:
-                            weatherRawData = RequestData(WEATHER_URL(tripRawData[trip]['trip_update']['position']['vehicle']['position']['latitude'],
-                                                                     tripRawData[trip]['trip_update']['position']['vehicle']['position']['longitude']))                            
+                            weatherRawData = RequestData(WEATHER_URL(tripRawData[trip]['trip_update']['position'] \
+                                                                     ['vehicle']['position'] \
+                                                                     ['latitude'],
+                                                                     tripRawData[trip]['trip_update']['position'] \
+                                                                     ['vehicle']['position'] \
+                                                                     ['longitude']))                            
                             weatherData = [weatherRawData['weather'], 
                                            weatherRawData['main']['temp'], 
                                            weatherRawData['main']['temp_min'], 
