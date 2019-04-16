@@ -5,41 +5,54 @@ import json
 import requests
 import csv
 
-from keys import METRA_USER, METRA_PASS, WEATHER_KEY # Create keys.py in same directory and include API keys
+# Create keys.py in same directory and include API keys
+from keys import METRA_USER, METRA_PASS, WEATHER_KEY
+
 import logging as log # Setup logging
-log.basicConfig(filename='data/data_collection.log', filemode='a', format='%(asctime)s - %(levelname)s - %(message)s', level=log.INFO)
+log.basicConfig(filename='data/data_collection.log', 
+                filemode='a', format='%(asctime)s - %(levelname)s - %(message)s', 
+                level=log.INFO)
 
 # Global API URLs
 TRIPUPDATES_URL = "https://gtfsapi.metrarail.com/gtfs/tripUpdates"
 ALERTS_URL = "https://gtfsapi.metrarail.com/gtfs/alerts"
-WEATHER_URL = lambda lat,lon: "https://api.openweathermap.org/data/2.5/weather?lat="+str(lat)+"&lon="+str(lon)+"&appid="+WEATHER_KEY
+WEATHER_URL = lambda lat,lon: "https://api.openweathermap.org/data/2.5/weather \
+                          ?lat="+str(lat)+"&lon="+str(lon)+"&appid="+WEATHER_KEY
 
 def RequestData(URL, User=None, Pass=None):
-    return json.loads(requests.get(URL, auth=(User, Pass) if User!=None and Pass!=None else None).text)
+    return json.loads(requests.get(URL, 
+                                   auth=(User, Pass) if User and Pass else None).text)
 
 def CollectAlerts():
     try:
-        with open("data/alert.csv","a", newline='') as alerts: # open and close file
+        with open("data/alert.csv","a", newline='') as alerts: # open/close file
             alertsWriter = csv.writer(alerts) # setup writer
             while True:
                 # setup variables
                 alertsRawData = None
                 attempts = 0
                 while attempts < 10: # try to connect
-                    try: alertsRawData = RequestData(ALERTS_URL, METRA_USER, METRA_PASS)
-                    except requests.exceptions.RequestException as e: # if requests fail after 10 trys skip, try in 30 min
+                    try: alertsRawData = RequestData(ALERTS_URL, 
+                                                     METRA_USER, 
+                                                     METRA_PASS)
+                    except requests.exceptions.RequestException as e: 
+                        # if requests fail after 10 trys skip, try in 30 min
                         attempts += 1
-                        log.error('Operation failed: %s with %d attempts remaining' % (e, 10-attempts))
+                        log.error('Operation failed: \
+                                   %s with %d attempts remaining' \
+                                   % (e, 10-attempts))
                     else: break # data collected break request loop
                 
                 try:
-                    if alertsRawData == None: raise ValueError("Data collection from the server failed")
+                    if not alertsRawData: 
+                        raise ValueError("Data collection from the server failed")
                     
                     # setup variables
                     affectedRoutes = []
                     alertsData = []
             
-                    for alert in range(len(alertsRawData)): # filter data and write to csv
+                    for alert in range(len(alertsRawData)): 
+                        # filter data and write to csv
                         for routes in alertsRawData[alert]['alert']['informed_entity']:
                             affectedRoutes += [routes['route_id']]
                             try:
@@ -53,7 +66,8 @@ def CollectAlerts():
                                               alertsRawData[alert]['alert']['effect'], 
                                               alertsRawData[alert]['alert']['description_text']['translation'][0]['text']]
                             except KeyError as e:
-                                log.error('Operation failed: %s , Alert data missing key' % e)
+                                log.error('Operation failed: %s , \
+                                           Alert data missing key' % e)
                                 tripData = None
                             else:
                                 alertsWriter.writerow(alertsData)
@@ -61,26 +75,33 @@ def CollectAlerts():
                                 logData_lst = [str(data) for data in alertsData]
                                 logData = "".join(logData_lst)
                                 log.info("Alert Data: " + logData)
-                except ValueError as e: log.error('Operation failed: %s' % e)
-                finally: time.sleep(1800) # check for new alerts after 30 mins              
-    except IOError as e: log.error('Operation failed: %s' % e); raise IOError(e)
+                except ValueError as e: 
+                    log.error('Operation failed: %s' % e)
+                finally: 
+                    time.sleep(1800) # check for new alerts after 30 mins
+                
+    except IOError as e: 
+        log.error('Operation failed: %s' % e)
+        raise IOError(e)
 
 def CollectData():
     try:
-        with open("data/trip.csv","a", newline='') as trip: # open and close file
+        with open("data/trip.csv","a", newline='') as trip: # open/close file
             tripWriter = csv.writer(trip) # setup writer
             while True:
                 # setup variables
                 tripData = [] 
                 weatherData = []
                 try:
-                    tripRawData = RequestData(TRIPUPDATES_URL, METRA_USER, METRA_PASS) # request data
+                    tripRawData = RequestData(TRIPUPDATES_URL, 
+                                              METRA_USER, 
+                                              METRA_PASS) # request data
                     
                     # keep collected time the same for each route
                     collectedTimeFormatted = datetime.datetime.now()
                     collectedTime = time.time()
                     
-                    for trip in range(len(tripRawData)): # filter and write data to csv
+                    for trip in range(len(tripRawData)): # filter/write data to csv
                         try:
                             tripData = [collectedTime,
                                         collectedTimeFormatted,
@@ -92,9 +113,9 @@ def CollectData():
                                         tripRawData[trip]['trip_update']['position']['vehicle']['position']['latitude'], 
                                         tripRawData[trip]['trip_update']['position']['vehicle']['position']['longitude']]
                         except KeyError as e:
-                            log.error('Operation failed: %s , Trip data missing key' % e)
+                            log.error('Operation failed: %s , \
+                                       Trip data missing key' % e)
                             tripData = None
-                        
                         else:
                             logData_lst = [str(data) for data in tripData]
                             logData = "".join(logData_lst)
@@ -110,9 +131,9 @@ def CollectData():
                                            weatherRawData['visibility'],
                                            weatherRawData['wind']['speed']]
                         except KeyError as e:
-                            log.error('Operation failed: %s , Weather data missing key' % e)
+                            log.error('Operation failed: %s , \
+                                       Weather data missing key' % e)
                             weatherData = []
-                        
                         else:
                             logData_lst = [str(data) for data in weatherData]
                             logData = "".join(logData_lst)
@@ -122,7 +143,8 @@ def CollectData():
                             fullData = tripData + weatherData
                             tripWriter.writerow(fullData)
                     
-                except requests.exceptions.RequestException as e: log.error('Operation failed: %s' % e)
+                except requests.exceptions.RequestException as e: 
+                    log.error('Operation failed: %s' % e)
                 finally: time.sleep(30)          
     except IOError as e: log.error('Operation failed: %s' % e); raise IOError(e)
 
@@ -137,4 +159,4 @@ if __name__ == "__main__":
     alertsDataThread.start()
     
     while True:
-        pass
+        pass # allow threads to continue as daemons
