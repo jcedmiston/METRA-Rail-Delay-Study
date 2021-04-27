@@ -32,9 +32,8 @@ def CollectAlerts():
 				alertsRawData = None
 				attempts = 0
 				while attempts < 10: # try to connect
-					try: alertsRawData = RequestData(ALERTS_URL, 
-					                                 METRA_USER, 
-					                                 METRA_PASS)
+					try: 
+						alertsRawData = RequestData(ALERTS_URL, METRA_USER, METRA_PASS)
 					except requests.exceptions.RequestException as e: 
 						# if requests fail after 10 trys skip, try in 30 min
 						attempts += 1
@@ -149,8 +148,11 @@ def CollectData():
 
 				except requests.exceptions.RequestException as e: 
 					log.error('Operation failed: %s' % e)
-				finally: time.sleep(30)          
-	except IOError as e: log.error('Operation failed: %s' % e); raise IOError(e)
+				finally: 
+					time.sleep(30)          
+	except IOError as e: 
+		log.error('Operation failed: %s' % e)
+		raise IOError(e)
 
 if __name__ == "__main__":
 	mainDataThread = Thread(name='Main Data Collection', target=CollectData)
