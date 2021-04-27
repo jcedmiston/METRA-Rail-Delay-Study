@@ -5,15 +5,13 @@ def colorRange(row):
     colors = [hex_val for hex_val in range(0x99FA00,0x990000,-0x500)]
     if row['normalized_delay'] > 1:
         return 0x000000
-    else:
-        return colors[floor(len(colors)*row['normalized_delay'])]
+    return colors[floor(len(colors)*row['normalized_delay'])]
     
 def colorRangeHex(delay):
     colors = [hex_val for hex_val in range(0x99FA00,0x990000,-0x500)]
     if delay > 1:
         return hex(0x000000)
-    else:
-        return hex(colors[floor(len(colors)*delay)])
+    return hex(colors[floor(len(colors)*delay)])
     
 
 def timeSinceMidnight(row):
